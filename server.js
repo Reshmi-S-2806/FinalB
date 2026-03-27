@@ -42,7 +42,6 @@ function generateFraudFeatures(amount) {
 // });
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    host: 'db.cjdynhzbzmqthxkiyvpu.supabase.co',
     ssl: {
         rejectUnauthorized: false // Required for most cloud providers like Supabase/Render/Heroku
     }
