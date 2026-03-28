@@ -27,3 +27,18 @@ spec:
             value: "your_key_here"
           - name: DATABASE_URL
             value: "postgresql://postgres.cjdynhzbzmqthxkiyvpu:Reshmi&&2004@aws-1-ap-northeast-1.pooler.supabase.com:6543/postgres"
+---
+# New Fraud API Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shopeasy-fraud
+...
+---
+# New Chatbot Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shopeasy-chatbot
+...
+
