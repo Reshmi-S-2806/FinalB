@@ -21,7 +21,7 @@ spec:
         - containerPort: 5000
         env:
           - name: GEMINI_API_KEY
-            value: "your_gemini_key_here"
+            value: "AIzaSyCRzOcZ3RQvfU0afFVYplDokzWokVOH0Ks"
           - name: DATABASE_URL
             value: "postgresql://postgres.cjdynhzbzmqthxkiyvpu:Reshmi&&2004@aws-1-ap-northeast-1.pooler.supabase.com:6543/postgres"
           # IMPORTANT: Tell Node where to find the Python services
