@@ -757,8 +757,7 @@ const features = {
 };
 
 // Call Python ML API
-const fraudResponse = await axios.post("http://127.0.0.1:5000/predict", features);
-
+const fraudResponse = await axios.post(`${process.env.FRAUD_API_URL}/predict`, features);
 console.log("Fraud result:", fraudResponse.data);
 
 const fraudPrediction = fraudResponse.data.fraud_prediction;
