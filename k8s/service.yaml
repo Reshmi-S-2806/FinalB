@@ -1,13 +1,46 @@
+# 1. SERVICE FOR NODE.JS MAIN BACKEND
 apiVersion: v1
 kind: Service
 metadata:
   name: backend-service
 spec:
+  type: NodePort
   selector:
     app: backend
   ports:
     - protocol: TCP
-      port: 5000       # Internal Cluster Port
-      targetPort: 3000 # Port inside your Container
-      nodePort: 30002  # THE EXTERNAL PORT for your browser (30000-32767)
-  type: NodePort       # Changed from ClusterIP to NodePort
+      port: 5000       # Port used by other services inside the cluster
+      targetPort: 3000 # Matches the port your Node.js app listens on
+      nodePort: 30002  # Access this via http://localhost:30002 in your browser
+
+---
+
+# 2. SERVICE FOR FRAUD DETECTION (Python Flask)
+apiVersion: v1
+kind: Service
+metadata:
+  name: fraud-service
+spec:
+  type: ClusterIP
+  selector:
+    app: fraud-app
+  ports:
+    - protocol: TCP
+      port: 5001       # Matches FRAUD_API_URL in your deployment.yaml
+      targetPort: 5001
+
+---
+
+# 3. SERVICE FOR CHATBOT (Python Flask)
+apiVersion: v1
+kind: Service
+metadata:
+  name: chatbot-service
+spec:
+  type: ClusterIP
+  selector:
+    app: chatbot-app
+  ports:
+    - protocol: TCP
+      port: 6000       # Matches CHATBOT_API_URL in your deployment.yaml
+      targetPort: 6000
