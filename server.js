@@ -1179,6 +1179,17 @@ app.get('/api/admin/stats', authenticateToken, isAdmin, async (req, res) => {
         res.status(500).json({ error: 'Server error' });
     }
 });
+app.post('/api/chat', async (req, res) => {
+    try {
+        // Send the message to the Python Chatbot Service in K8s
+        const response = await axios.post("http://chatbot-service:6000/chat", {
+            message: req.body.message
+        });
+        res.json(response.data);
+    } catch (error) {
+        res.status(500).json({ reply: "Chatbot is currently offline." });
+    }
+});
 
 // Clear cart after payment
 app.delete('/api/cart/clear', authenticateToken, async (req, res) => {
