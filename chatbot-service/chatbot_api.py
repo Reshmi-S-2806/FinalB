@@ -1,78 +1,31 @@
-from flask import Flask, request, jsonify
-import json
+import os
 import psycopg2
+from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-# Load FAQ dataset
-with open("faq.json", "r") as f:
-    faq_data = json.load(f)
+# Get the URL from the Environment Variable we set in Kubernetes
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-# PostgreSQL connection
-conn = psycopg2.connect(
-    host="localhost",
-    database="shopeasy",
-    user="postgres",
-    password="root"
-)
+def get_db_connection():
+    # This connects to Supabase using the string in your deployment.yaml
+    return psycopg2.connect(DATABASE_URL)
 
-cursor = conn.cursor()
-
-
-def check_product_stock(message):
-
-    message = message.lower()
-
-    cursor.execute("SELECT name, stock_quantity FROM products")
-    products = cursor.fetchall()
-
-    for product in products:
-        product_name = product[0].lower()
-        stock = product[1]
-
-        if product_name in message:
-
-            if stock > 0:
-                return f"Yes, {product_name} is available in stock. You can place the order."
-
-            else:
-                return f"{product_name} is currently out of stock. Please try again in 2-3 days."
-
-    return None
-
-
-def check_faq(message):
-
-    message = message.lower()
-
-    for key in faq_data:
-        if key in message:
-            return faq_data[key]
-
-    return None
-
-
-@app.route("/chat", methods=["POST"])
+@app.route('/chat', methods=['POST'])
 def chat():
+    user_query = request.json.get('message')
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    # Simple search logic: Find an answer that matches the user's question
+    cur.execute("SELECT answer FROM chatbot_faqs WHERE question ILIKE %s", (f'%{user_query}%',))
+    result = cur.fetchone()
+    
+    cur.close()
+    conn.close()
 
-    user_message = request.json.get("message")
-
-    # Check product stock
-    product_reply = check_product_stock(user_message)
-
-    if product_reply:
-        return jsonify({"reply": product_reply})
-
-    # Check FAQ dataset
-    faq_reply = check_faq(user_message)
-
-    if faq_reply:
-        return jsonify({"reply": faq_reply})
-
-    return jsonify({
-        "reply": "Sorry, I could not understand your question. Please ask about payments, fraud detection, or product availability."
-    })
-
-
-if __name__ == "__main__":
-    app.run(port=6000, debug=True)
+    if result:
+        return jsonify({"response": result[0]})
+    else:
+        return jsonify({"response": "I'm sorry, I couldn't find information on that. How else can I help?"})
