@@ -94,7 +94,7 @@ const pythonapi = async (req, res) => {
         
         // Use 'http://localhost:6000/chat' for local testing
         // Use 'http://chatbot-service:6000/chat' for Kubernetes
-        const response = await axios.post('http://localhost:6000/chat', {
+        const response = await axios.post('http://chatbot-service:6000/chat', {
             message: userText 
         });
 
