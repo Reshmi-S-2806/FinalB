@@ -1,24 +1,29 @@
 # Use a lightweight Python image
 FROM python:3.9-slim
 
-# Set the working directory inside the container
+# Set the working directory
 WORKDIR /app
 
-# Install only the necessary system libraries for PostgreSQL (psycopg2)
+# Install system dependencies for PostgreSQL
 RUN apt-get update && apt-get install -y \
     libpq-dev \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
-# Install the Python dependencies directly
-RUN pip install --no-cache-dir flask psycopg2-binary
+# Install all Python dependencies in ONE command
+# This ensures flask-cors and google-generativeai are definitely present
+RUN pip install --no-cache-dir \
+    flask \
+    psycopg2-binary \
+    flask-cors \
+    google-generativeai
 
-# Copy only the files needed for the chatbot to function
+# Copy your script and your local FAQ file
 COPY chatbot_api.py .
 COPY faq.json .
 
-# Expose the port your Flask app is running on
+# Expose the port (matching your app.run port)
 EXPOSE 6000
 
-# Command to run the chatbot
+# Run the application
 CMD ["python", "chatbot_api.py"]
