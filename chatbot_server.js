@@ -83,31 +83,30 @@
 const axios = require('axios');
 
 const pythonapi = async (req, res) => {
-    // 1. Get the message from the Angular request body
     const userText = req.body.message;
-     res.json({userText})
-    // if (!userText) {
-    //     return res.status(400).json({ error: "No message provided" });
-    // }
 
-    // try {
-    //     // 2. Forward the request to your Python Chatbot Service (running on port 6000)
-    //     // Ensure the URL matches your Kubernetes Service name or localhost
-    //     const response = await axios.post('http://chatbot-service:6000/chat', {
-    //         message: userText 
-    //     });
+    if (!userText) {
+        return res.status(400).json({ error: "No message provided" });
+    }
 
-    //     // 3. Send the Python response BACK to your Angular frontend
-    //     // Python returns { "response": "..." }, so we send that back
-    //     res.json({
-    //         response: response.data.response 
-    //     });
+    try {
+        // FIX: Remove the early res.json({userText}) that was here
+        
+        // Use 'http://localhost:6000/chat' for local testing
+        // Use 'http://chatbot-service:6000/chat' for Kubernetes
+        const response = await axios.post('http://localhost:6000/chat', {
+            message: userText 
+        });
 
-    // } catch (error) {
-    //     console.error('Error connecting to chatbot:', error);
-    //     res.status(500).json({ error: "Chatbot service is currently unavailable" });
-    // }
+        // FIX: Map Python's 'response' key to Angular's 'reply' key
+        res.json({ 
+            reply: response.data.response 
+        });
+
+    } catch (error) {
+        console.error('Chatbot Bridge Error:', error.message);
+        res.status(500).json({ error: "Chatbot service unavailable" });
+    }
 };
 
-// 4. Corrected export syntax (it is module.exports with an 's')
 module.exports = pythonapi;
