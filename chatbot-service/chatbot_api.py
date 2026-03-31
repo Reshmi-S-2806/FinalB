@@ -35,7 +35,8 @@ def chat():
         cur = conn.cursor()
         
         # Search for a matching question in your table
-        cur.execute("SELECT answer FROM chatbot_faqs WHERE question ILIKE %s LIMIT 1", (f'%{user_query}%',))
+        cur.execute("SELECT answer FROM chatbot_faqs WHERE question = 'merchant risk score');
+        # ILIKE %s LIMIT 1", (f'%{user_query}%',))
         result = cur.fetchone()
         
         if result:
