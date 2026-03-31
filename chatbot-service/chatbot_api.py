@@ -5,63 +5,109 @@ from flask_cors import CORS
 import google.generativeai as genai
 
 app = Flask(__name__)
-CORS(app) # Ensures your Angular frontend can talk to this Python API
+CORS(app)
 
-# 1. Configure Gemini AI
-# Make sure GEMINI_API_KEY is in your k8s/deployment.yaml
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-model = genai.GenerativeModel('gemini-1.5-flash')
-
+# =========================
+# ENV VARIABLES (DEBUG)
+# =========================
 DATABASE_URL = os.getenv("DATABASE_URL")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
+print("DATABASE_URL:", DATABASE_URL)
+print("GEMINI_API_KEY:", GEMINI_API_KEY)
+
+# =========================
+# GEMINI CONFIG
+# =========================
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
+    model = genai.GenerativeModel('gemini-1.5-flash')
+else:
+    model = None
+    print("⚠️ GEMINI_API_KEY is missing!")
+
+# =========================
+# DATABASE CONNECTION
+# =========================
 def get_db_connection():
-    # Fix for common Supabase connection string issues
+    if not DATABASE_URL:
+        raise Exception("DATABASE_URL is not set")
+
     url = DATABASE_URL
-    if url and url.startswith("postgres://"):
+    if url.startswith("postgres://"):
         url = url.replace("postgres://", "postgresql://", 1)
+
     return psycopg2.connect(url)
 
+# =========================
+# CHAT API
+# =========================
 @app.route('/chat', methods=['POST'])
 def chat():
-    user_query = request.json.get('message')
-    if not user_query:
-        return jsonify({"response": "I didn't catch that. Could you repeat?"})
-
-    response_text = None
-
-    # STEP 1: Search your Supabase FAQ table first
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
-        # Search for a matching question in your table
-        cur.execute("SELECT answer FROM chatbot_faqs WHERE question ILIKE %s LIMIT 1",
-    (f"%{user_query}%",)
-        # ILIKE %s LIMIT 1", (f'%{user_query}%',))
-        result = cur.fetchone()
-        
-        if result:
-            response_text = result[0]
-            
-        cur.close()
-        conn.close()
-    except Exception as e:
-        print(f"Database error: {e}")
-        # We don't return here; if DB fails, we let Gemini try to answer
+        data = request.get_json()
+        user_query = data.get('message') if data else None
 
-    # STEP 2: If no FAQ match, use Gemini AI
-    if not response_text:
+        print("Incoming query:", user_query)
+
+        if not user_query:
+            return jsonify({"response": "I didn't catch that. Could you repeat?"})
+
+        response_text = None
+
+        # =========================
+        # STEP 1: DATABASE SEARCH
+        # =========================
         try:
-            # Context injection tells Gemini who it is
-            prompt = f"You are the AI assistant for ShopEasy, an e-commerce site. User asks: {user_query}"
-            gen_response = model.generate_content(prompt)
-            response_text = gen_response.text
+            conn = get_db_connection()
+            cur = conn.cursor()
+
+            cur.execute(
+                "SELECT answer FROM chatbot_faqs WHERE question ILIKE %s LIMIT 1",
+                (f"%{user_query}%",)
+            )
+
+            result = cur.fetchone()
+
+            if result:
+                response_text = result[0]
+                print("DB Response:", response_text)
+
+            cur.close()
+            conn.close()
+
         except Exception as e:
-            print(f"Gemini error: {e}")
-            response_text = "I'm sorry, I'm having trouble connecting to my AI brain. Please try again."
+            print("Database error:", str(e))
 
-    return jsonify({"response": response_text})
+        # =========================
+        # STEP 2: GEMINI FALLBACK
+        # =========================
+        if not response_text:
+            if not model:
+                return jsonify({
+                    "response": "AI service not configured properly."
+                })
 
+            try:
+                prompt = f"You are the AI assistant for ShopEasy. User asks: {user_query}"
+                gen_response = model.generate_content(prompt)
+
+                response_text = gen_response.text if gen_response else "No response from AI"
+                print("Gemini Response:", response_text)
+
+            except Exception as e:
+                print("Gemini error:", str(e))
+                response_text = "I'm having trouble connecting to AI service."
+
+        return jsonify({"response": response_text})
+
+    except Exception as e:
+        print("Chat API Error:", str(e))
+        return jsonify({"response": "Internal server error"}), 500
+
+
+# =========================
+# RUN APP
+# =========================
 if __name__ == '__main__':
-    # Running on port 6000 as per your Kubernetes configuration
     app.run(host='0.0.0.0', port=6000, debug=True)
