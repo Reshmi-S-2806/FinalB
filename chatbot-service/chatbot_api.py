@@ -21,7 +21,7 @@ print("GEMINI_API_KEY:", GEMINI_API_KEY)
 # =========================
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    model = genai.GenerativeModel('Gemini 2.5 Flash Lite')
 else:
     model = None
     print("⚠️ GEMINI_API_KEY is missing!")
