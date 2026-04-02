@@ -90,23 +90,28 @@ const pythonapi = async (req, res) => {
     }
 
     try {
-        // Switch between localhost (local dev) or chatbot-service (K8s)
         const targetUrl = process.env.NODE_ENV === 'production' 
             ? 'http://chatbot-service:6000/chat' 
             : 'http://localhost:6000/chat';
 
+        console.log("Sending to Flask:", userText);
+
         const response = await axios.post(targetUrl, {
-            message: userText 
+            message: userText
         });
 
-        // We return 'reply' so your Angular frontend doesn't break
+        console.log("Flask response:", response.data);
+
         res.json({ 
             reply: response.data.response 
         });
 
     } catch (error) {
-        console.error('Bridge Error:', error.message);
-        res.status(500).json({ reply: "Service temporarily unavailable." });
+        console.error('Bridge Error FULL:', error.response?.data || error.message);
+
+        res.status(500).json({ 
+            reply: "Chatbot service error." 
+        });
     }
 };
 
