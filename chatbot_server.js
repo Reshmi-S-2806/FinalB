@@ -80,39 +80,40 @@
 // //     console.log("Chatbot server running on port 4000");
 // // });
 // module.exports = chat
-const axios = require('axios');
+const express = require("express");
+const cors = require("cors");
+const axios = require("axios");
 
-const pythonapi = async (req, res) => {
+const app = express();
+
+app.use(cors());
+app.use(express.json());
+
+app.post("/chat", async (req, res) => {
     const userText = req.body.message;
 
     if (!userText) {
-        return res.status(400).json({ error: "No message provided" });
+        return res.status(400).json({ reply: "No message provided" });
     }
 
     try {
-        const targetUrl = process.env.NODE_ENV === 'production' 
-            ? 'http://chatbot-service:6000/chat' 
-            : 'http://localhost:6000/chat';
-
-        console.log("Sending to Flask:", userText);
-
-        const response = await axios.post(targetUrl, {
+        const response = await axios.post("http://localhost:6000/chat", {
             message: userText
         });
 
-        console.log("Flask response:", response.data);
-
-        res.json({ 
-            reply: response.data.response 
+        res.json({
+            reply: response.data.reply   // ✅ MATCH FLASK
         });
 
     } catch (error) {
-        console.error('Bridge Error FULL:', error.response?.data || error.message);
+        console.error("Node ERROR:", error.message);
 
-        res.status(500).json({ 
-            reply: "Chatbot service error." 
+        res.status(500).json({
+            reply: "Chatbot service error."
         });
     }
-};
+});
 
-module.exports = pythonapi;
+app.listen(30002, () => {
+    console.log("Node server running on port 30002");
+});
