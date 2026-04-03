@@ -130,13 +130,3 @@ app.post("/chat", async (req, res) => {
     }
 });
 
-// =========================
-// 🚀 START SERVER
-// =========================
-app.listen(30002, () => {
-    console.log("Node server running on port 30002");
-});
-
-app.listen(30002, () => {
-    console.log("Node server running on port 30002");
-});
