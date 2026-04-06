@@ -760,8 +760,8 @@ const features = {
 const fraudResponse = await axios.post(`${process.env.FRAUD_API_URL}/predict`, features);
 console.log("Fraud result:", fraudResponse.data);
 
-const fraudPrediction = fraudResponse.data.fraud_prediction;
-const fraudScore = fraudResponse.data.fraud_score;
+let fraudPrediction = fraudResponse.data.fraud_prediction;
+let fraudScore = fraudResponse.data.fraud_score;
 console.log("Fraud prediction:", fraudPrediction);
 console.log("Fraud Score:", fraudScore);
 
@@ -769,7 +769,7 @@ console.log("Fraud Score:", fraudScore);
         let fraudFlag = 0;
 
 // ML fraud decision
-if (fraudScore && fraudScore > 0.7) {
+if (fraudScore > 0.7) {
     paymentStatus = "blocked";
     fraudFlag = 1;
 }
